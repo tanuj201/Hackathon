@@ -104,7 +104,7 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
   };
 
   return (
-    <div className="flex flex-col min-h-0 h-full">
+    <div className="flex flex-col h-full min-h-0">
       <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
         <div>
           <h2 className="font-semibold">Multi-AI Chat</h2>

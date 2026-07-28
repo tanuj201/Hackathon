@@ -76,14 +76,14 @@ export function WorkspaceLayout() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="flex-1 mt-0 overflow-hidden flex flex-col">
+          <TabsContent value="chat" className="flex-1 mt-0 flex flex-col min-h-0">
             <ChatPanel
               selectedFile={selectedFile}
               model={model}
               onModelChange={setModel}
             />
           </TabsContent>
-          <TabsContent value="studio" className="flex-1 mt-0 overflow-hidden flex flex-col">
+          <TabsContent value="studio" className="flex-1 mt-0 flex flex-col min-h-0">
             <StudioTools file={selectedFile} model={model} />
           </TabsContent>
         </Tabs>
