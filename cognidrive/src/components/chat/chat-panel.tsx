@@ -104,8 +104,8 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3">
+    <div className="flex flex-col min-h-0 h-full">
+      <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
         <div>
           <h2 className="font-semibold">Multi-AI Chat</h2>
           <p className="text-xs text-muted-foreground">
@@ -118,7 +118,7 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
       </div>
 
       {configStatus && !configStatus.openrouter && (
-        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm shrink-0">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600" />
           <div>
             <p className="font-medium text-yellow-700">OpenRouter API key not configured</p>
@@ -134,7 +134,7 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4">
         <div className="space-y-4 py-4">
           {messages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
@@ -185,7 +185,7 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
         </div>
       </div>
 
-      <div className="border-t p-4">
+      <div className="border-t p-4 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
