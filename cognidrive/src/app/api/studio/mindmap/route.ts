@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
-import { createServerClient } from "@/lib/supabase/client";
+import { getStudioFileAccess, recordStudioUsage } from "@/lib/studio-access";
 import type { AIModel, MindMapNode } from "@/types";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,17 +14,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "fileId is required" }, { status: 400 });
     }
 
-    const supabase = createServerClient();
-    const { data: file, error } = await supabase
-      .from("files")
-      .select("content_text, name")
-      .eq("id", fileId)
-      .single();
-
-    if (error || !file?.content_text) {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    const access = await getStudioFileAccess(fileId);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
+    const { userId, file } = access;
     const docText = file.content_text.slice(0, 12000);
 
     const raw = await callOpenRouter({
@@ -67,11 +65,10 @@ Rules:
     try {
       mindMap = JSON.parse(raw);
     } catch {
-      return NextResponse.json(
-        { error: "Failed to parse mind map JSON" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to parse mind map JSON" }, { status: 500 });
     }
+
+    await recordStudioUsage(userId);
 
     return NextResponse.json({ mindMap });
   } catch (err) {

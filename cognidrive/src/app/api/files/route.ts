@@ -1,70 +1,81 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, STORAGE_BUCKET, getConfigStatus } from "@/lib/supabase/client";
+import { getAuthUserId } from "@/lib/supabase/server";
 import { parseDocument } from "@/lib/document-parser";
 import { embedAndStoreChunks } from "@/lib/rag";
-import { getMaxStorageBytes, getStorageQuotaFromUsed } from "@/lib/storage-config";
+import { getUserUsage } from "@/lib/usage";
+import { formatLaunchEndDate } from "@/lib/launch-config";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const config = getConfigStatus();
     if (!config.supabase) {
       return NextResponse.json(
-        {
-          error:
-            "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then redeploy.",
-          files: [],
-          quota: { used: 0, total: getMaxStorageBytes() },
-        },
+        { error: "Supabase is not configured.", files: [], quota: { used: 0, total: 0 } },
         { status: 503 }
       );
     }
 
+    const usage = await getUserUsage(userId);
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from("files")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
-      const hint = error.message.includes("relation")
-        ? " Run supabase/schema.sql in your Supabase SQL Editor."
-        : "";
-      return NextResponse.json(
-        { error: `${error.message}${hint}`, files: [], quota: { used: 0, total: getMaxStorageBytes() } },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message, files: [] }, { status: 500 });
     }
 
     const used = data?.reduce((sum, f) => sum + Number(f.size), 0) ?? 0;
 
     return NextResponse.json({
       files: data ?? [],
-      quota: getStorageQuotaFromUsed(used),
+      quota: {
+        used,
+        total: usage.storageLimit,
+        percent: usage.storageLimit > 0 ? Math.min((used / usage.storageLimit) * 100, 100) : 0,
+        remaining: Math.max(usage.storageLimit - used, 0),
+      },
+      usage: {
+        chatCount: usage.chatCount,
+        chatLimit: usage.chatLimit,
+        studioCount: usage.studioCount,
+        studioLimit: usage.studioLimit,
+        plan: usage.plan,
+        planLabel: usage.planLabel,
+        isEarlyAccess: usage.isEarlyAccess,
+        launchEndsLabel: formatLaunchEndDate(),
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to load files";
-    return NextResponse.json(
-      { error: message, files: [], quota: { used: 0, total: getMaxStorageBytes() } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message, files: [] }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const config = getConfigStatus();
     if (!config.supabase) {
-      return NextResponse.json(
-        {
-          error:
-            "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel Environment Variables and redeploy.",
-        },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
     }
+
+    const usage = await getUserUsage(userId);
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -96,32 +107,28 @@ export async function POST(request: NextRequest) {
 
     const { data: existingFiles, error: sizeError } = await supabase
       .from("files")
-      .select("size");
+      .select("size")
+      .eq("user_id", userId);
 
     if (sizeError) {
-      const hint = sizeError.message.includes("relation")
-        ? " Create tables by running supabase/schema.sql in Supabase SQL Editor."
-        : "";
-      return NextResponse.json(
-        { error: `Database error: ${sizeError.message}${hint}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: sizeError.message }, { status: 500 });
     }
 
     const usedBytes =
       existingFiles?.reduce((sum, f) => sum + Number(f.size), 0) ?? 0;
 
-    const maxBytes = getMaxStorageBytes();
-    if (usedBytes + file.size > maxBytes) {
+    if (usedBytes + file.size > usage.storageLimit) {
       return NextResponse.json(
-        { error: "Storage quota exceeded" },
+        {
+          error: `Storage quota exceeded (${usage.plan} plan). Delete files or upgrade to Student Pro.`,
+        },
         { status: 413 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const contentText = await parseDocument(buffer, file.type, file.name);
-    const storagePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const storagePath = `${userId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
     let storageWarning: string | undefined;
     if (config.supabaseServiceKey) {
@@ -133,12 +140,8 @@ export async function POST(request: NextRequest) {
         });
 
       if (uploadError) {
-        storageWarning = `File saved but storage upload failed: ${uploadError.message}. Create bucket "${STORAGE_BUCKET}" in Supabase → Storage.`;
-        console.warn(storageWarning);
+        storageWarning = `File saved but storage upload failed: ${uploadError.message}`;
       }
-    } else {
-      storageWarning =
-        "SUPABASE_SERVICE_ROLE_KEY not set — file text saved to database only (no binary in Storage). Add the service role key in Vercel for full storage.";
     }
 
     const { data: fileRecord, error: dbError } = await supabase
@@ -149,18 +152,13 @@ export async function POST(request: NextRequest) {
         size: file.size,
         storage_path: storagePath,
         content_text: contentText,
-        user_id: "default-user",
+        user_id: userId,
       })
       .select()
       .single();
 
     if (dbError) {
-      return NextResponse.json(
-        {
-          error: `Failed to save file: ${dbError.message}. Ensure supabase/schema.sql was run and RLS policies exist.`,
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
     let chunksStored = 0;
@@ -171,13 +169,9 @@ export async function POST(request: NextRequest) {
       const result = await embedAndStoreChunks(fileRecord.id, contentText);
       chunksStored = result.stored;
       chunksEmbedded = result.embedded;
-      if (result.embeddingError) {
-        embeddingWarning = result.embeddingError;
-      }
+      if (result.embeddingError) embeddingWarning = result.embeddingError;
     } catch (err) {
-      embeddingWarning =
-        err instanceof Error ? err.message : "Chunk indexing failed";
-      console.warn("Embedding error:", embeddingWarning);
+      embeddingWarning = err instanceof Error ? err.message : "Chunk indexing failed";
     }
 
     return NextResponse.json({

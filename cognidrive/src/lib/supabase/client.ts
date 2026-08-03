@@ -24,7 +24,7 @@ function getSupabaseAnonKey(): string {
 
 let browserClient: SupabaseClient | null = null;
 
-/** Browser-safe client (uses anon key). */
+/** Browser-safe client (uses anon key) — for auth UI */
 export function getSupabaseBrowserClient(): SupabaseClient {
   if (!browserClient) {
     browserClient = createClient(getSupabaseUrl(), getSupabaseAnonKey());
@@ -43,7 +43,6 @@ export function createServerClient(): SupabaseClient {
     });
   }
 
-  // Fallback to anon key (works if RLS policies allow public access)
   return createClient(url, getSupabaseAnonKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -86,7 +85,6 @@ export function getSiteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 }
 
-// Legacy export for any remaining imports
 export const supabase = {
   get client() {
     return getSupabaseBrowserClient();

@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServerClient, getConfigStatus, STORAGE_BUCKET } from "@/lib/supabase/client";
 import { hasTtsConfigured } from "@/lib/tts";
+import {
+  formatLaunchEndDate,
+  getLaunchEndsAtIso,
+  isEarlyAccessActive,
+  isFreemiumEnabled,
+} from "@/lib/launch-config";
+import { isStripeConfigured } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +16,11 @@ export async function GET() {
   const checks: Record<string, boolean | string> = {
     ...status,
     tts: hasTtsConfigured(),
+    stripe: isStripeConfigured(),
+    freemiumEnabled: isFreemiumEnabled(),
+    earlyAccess: isEarlyAccessActive(),
+    launchEndsAt: getLaunchEndsAtIso() ?? "",
+    launchEndsLabel: formatLaunchEndDate() ?? "",
   };
 
   if (status.supabase) {

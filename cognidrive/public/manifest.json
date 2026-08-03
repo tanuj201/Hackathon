@@ -1,0 +1,17 @@
+{
+  "name": "CogniDrive",
+  "short_name": "CogniDrive",
+  "description": "AI-powered document intelligence for students",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

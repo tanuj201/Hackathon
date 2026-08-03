@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
 import { retrieveRelevantChunks } from "@/lib/rag";
 import { createServerClient, getConfigStatus } from "@/lib/supabase/client";
+import { getAuthUserId } from "@/lib/supabase/server";
+import { checkChatAllowed, incrementUsage } from "@/lib/usage";
 import type { AIModel } from "@/types";
 
 export const maxDuration = 60;
@@ -9,13 +11,20 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const chatCheck = await checkChatAllowed(userId);
+    if (!chatCheck.allowed) {
+      return NextResponse.json({ error: chatCheck.error }, { status: 429 });
+    }
+
     const config = getConfigStatus();
     if (!config.openrouter) {
       return NextResponse.json(
-        {
-          error:
-            "OPENROUTER_API_KEY is not configured. Add it in Vercel → Settings → Environment Variables, then redeploy. Get a key at https://openrouter.ai/keys",
-        },
+        { error: "OPENROUTER_API_KEY is not configured." },
         { status: 503 }
       );
     }
@@ -28,21 +37,27 @@ export async function POST(request: NextRequest) {
 
     let context = "";
     if (fileId) {
+      const supabase = createServerClient();
+      const { data: ownedFile } = await supabase
+        .from("files")
+        .select("content_text")
+        .eq("id", fileId)
+        .eq("user_id", userId)
+        .single();
+
+      if (!ownedFile) {
+        return NextResponse.json({ error: "Document not found" }, { status: 404 });
+      }
+
       try {
         const chunks = await retrieveRelevantChunks(fileId, message);
         context = chunks.join("\n\n---\n\n");
       } catch {
-        // RAG optional — fall back to full document text
+        // RAG optional
       }
 
       if (!context) {
-        const supabase = createServerClient();
-        const { data: file } = await supabase
-          .from("files")
-          .select("content_text")
-          .eq("id", fileId)
-          .single();
-        context = file?.content_text?.slice(0, 12000) ?? "";
+        context = ownedFile.content_text?.slice(0, 12000) ?? "";
       }
     }
 
@@ -62,6 +77,8 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
       maxTokens: 2048,
     });
+
+    await incrementUsage(userId, "chat_count");
 
     return NextResponse.json({ reply });
   } catch (err) {

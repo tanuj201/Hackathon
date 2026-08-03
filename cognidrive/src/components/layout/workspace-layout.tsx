@@ -11,10 +11,23 @@ import { MessageSquare, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { AIModel, StoredFile, StorageQuota } from "@/types";
 import { DEFAULT_STORAGE_BYTES } from "@/types";
+import { PLANS } from "@/lib/plans";
+
+const defaultUsage = {
+  plan: "free",
+  planLabel: "Launch access",
+  isEarlyAccess: true,
+  launchEndsLabel: null as string | null,
+  chatCount: 0,
+  chatLimit: PLANS.pro.chatPerMonth,
+  studioCount: 0,
+  studioLimit: PLANS.pro.studioPerMonth,
+};
 
 export function WorkspaceLayout() {
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [quota, setQuota] = useState<StorageQuota>({ used: 0, total: DEFAULT_STORAGE_BYTES });
+  const [usage, setUsage] = useState(defaultUsage);
   const [selectedFile, setSelectedFile] = useState<StoredFile | null>(null);
   const [model, setModel] = useState<AIModel>("openai/gpt-4o");
 
@@ -22,6 +35,11 @@ export function WorkspaceLayout() {
     try {
       const res = await fetch("/api/files");
       const data = await res.json();
+
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
 
       if (data.error && !data.files?.length) {
         toast({
@@ -34,6 +52,9 @@ export function WorkspaceLayout() {
       if (data.files) {
         setFiles(data.files);
         setQuota(data.quota ?? { used: 0, total: DEFAULT_STORAGE_BYTES });
+        if (data.usage) {
+          setUsage(data.usage);
+        }
         setSelectedFile((prev) => {
           if (!prev) return prev;
           return data.files.find((f: StoredFile) => f.id === prev.id) ?? null;
@@ -68,6 +89,7 @@ export function WorkspaceLayout() {
           <StorageSidebar
             files={files}
             quota={quota}
+            usage={usage}
             selectedId={selectedFile?.id ?? null}
             onSelect={setSelectedFile}
             onRefresh={fetchFiles}

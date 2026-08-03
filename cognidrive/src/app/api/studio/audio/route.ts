@@ -5,7 +5,8 @@ import {
   parseTranscriptScript,
   hasTtsConfigured,
 } from "@/lib/tts";
-import { createServerClient, getConfigStatus } from "@/lib/supabase/client";
+import { getConfigStatus } from "@/lib/supabase/client";
+import { getStudioFileAccess, recordStudioUsage } from "@/lib/studio-access";
 import type { AIModel } from "@/types";
 
 export const maxDuration = 60;
@@ -15,13 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const config = getConfigStatus();
     if (!config.openrouter) {
-      return NextResponse.json(
-        {
-          error:
-            "OPENROUTER_API_KEY is not configured. Add it in Vercel Environment Variables and redeploy.",
-        },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "OPENROUTER_API_KEY is not configured." }, { status: 503 });
     }
 
     const { fileId, model } = await request.json();
@@ -30,17 +25,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "fileId is required" }, { status: 400 });
     }
 
-    const supabase = createServerClient();
-    const { data: file, error } = await supabase
-      .from("files")
-      .select("content_text, name")
-      .eq("id", fileId)
-      .single();
-
-    if (error || !file?.content_text) {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    const access = await getStudioFileAccess(fileId);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
+    const { userId, file } = access;
     const docText = file.content_text.slice(0, 10000);
 
     const scriptRaw = await callOpenRouter({
@@ -72,20 +62,17 @@ Return ONLY valid JSON in this format:
 
     if (lines.length === 0) {
       return NextResponse.json(
-        {
-          error: "Failed to generate transcript. Try again or switch AI model.",
-          raw: scriptRaw.slice(0, 500),
-        },
+        { error: "Failed to generate transcript. Try again or switch AI model." },
         { status: 500 }
       );
     }
 
-    // Prefer server TTS when configured; otherwise return transcript for browser playback
+    await recordStudioUsage(userId);
+
     if (hasTtsConfigured()) {
       try {
         const audioBuffer = await generateTTSAudio(lines);
         const base64Audio = Buffer.from(audioBuffer).toString("base64");
-
         return NextResponse.json({
           transcript: lines,
           audio: base64Audio,
@@ -93,7 +80,6 @@ Return ONLY valid JSON in this format:
           mode: "server-tts",
         });
       } catch (ttsErr) {
-        // Fall back to browser speech if TTS API fails
         return NextResponse.json({
           transcript: lines,
           audio: null,
@@ -111,7 +97,7 @@ Return ONLY valid JSON in this format:
       audio: null,
       mode: "browser-tts",
       warning:
-        "No ELEVENLABS_API_KEY or OPENAI_API_KEY set — playing with browser speech. Add a TTS key in Vercel for MP3 download.",
+        "No TTS API key set — using browser speech. Add OPENAI_API_KEY in Vercel for MP3 download.",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Audio generation failed";
