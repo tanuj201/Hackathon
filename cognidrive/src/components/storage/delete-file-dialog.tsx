@@ -47,7 +47,7 @@ export function DeleteFileDialog({
           <DialogTitle>Delete file?</DialogTitle>
           <DialogDescription>
             {file
-              ? `"${file.name}" (${formatBytes(file.size)}) will be permanently removed from your cloud storage, including all indexed chunks and embeddings. This cannot be undone."
+              ? `"${file.name}" (${formatBytes(file.size)}) will be permanently removed from your cloud storage, including all indexed chunks and embeddings. This cannot be undone.`
               : "This file will be permanently removed."}
           </DialogDescription>
         </DialogHeader>
