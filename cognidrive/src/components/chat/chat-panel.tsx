@@ -123,9 +123,9 @@ export function ChatPanel({ selectedFile, model, onModelChange }: ChatPanelProps
           <div>
             <p className="font-medium text-yellow-700">OpenRouter API key not configured</p>
             <p className="text-yellow-600/80 text-xs mt-1">
-              Set <code className="font-mono">OPENROUTER_API_KEY</code> in{" "}
-              <code className="font-mono">.env.local</code> and restart the dev server.
-              Get a free key at{" "}
+              Add <code className="font-mono">OPENROUTER_API_KEY</code> in{" "}
+              <strong>Vercel → Settings → Environment Variables</strong>, then redeploy.
+              Get a key at{" "}
               <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline">
                 openrouter.ai/keys
               </a>

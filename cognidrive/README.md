@@ -55,6 +55,45 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Vercel Deployment (fix uploads & AI chat)
+
+If uploads or AI chat fail on Vercel, follow this checklist:
+
+### Step 1 — Environment variables (Vercel Dashboard)
+
+Go to **Project → Settings → Environment Variables** and add:
+
+| Variable | Where to get it |
+|----------|-----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API (anon public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API (service_role) — **required for uploads** |
+| `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `NEXT_PUBLIC_SITE_URL` | Your Vercel URL, e.g. `https://cognidrive.vercel.app` |
+
+Apply to **Production**, **Preview**, and **Development**.
+
+### Step 2 — Redeploy
+
+After saving env vars: **Deployments → ⋯ → Redeploy**. Env changes do not apply until redeploy.
+
+### Step 3 — Supabase database
+
+In Supabase **SQL Editor**, run the full contents of `supabase/schema.sql`.
+
+### Step 4 — Supabase storage bucket
+
+1. Supabase → **Storage** → **New bucket**
+2. Name: `cognidrive-files`
+3. Public: **off** (private)
+4. If uploads still fail, run `supabase/storage-policies.sql` in SQL Editor
+
+### Step 5 — Verify
+
+Open `https://YOUR-APP.vercel.app/api/status` — all checks should pass (`ready: true`).
+
+The app shows a yellow setup banner at the top when something is misconfigured.
+
 ## Project Structure
 
 ```

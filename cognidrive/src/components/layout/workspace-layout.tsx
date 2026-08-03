@@ -5,8 +5,10 @@ import { StorageSidebar } from "@/components/storage/storage-sidebar";
 import { DocumentViewer } from "@/components/storage/document-viewer";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { StudioTools } from "@/components/studio/studio-tools";
+import { SetupBanner, SetupStatusCompact } from "@/components/layout/setup-banner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Sparkles } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import type { AIModel, StoredFile, StorageQuota } from "@/types";
 import { MAX_STORAGE_BYTES } from "@/types";
 
@@ -20,74 +22,89 @@ export function WorkspaceLayout() {
     try {
       const res = await fetch("/api/files");
       const data = await res.json();
+
+      if (data.error && !data.files?.length) {
+        toast({
+          title: "Could not load files",
+          description: data.error,
+          variant: "destructive",
+        });
+      }
+
       if (data.files) {
         setFiles(data.files);
-        setQuota(data.quota);
-        if (selectedFile) {
-          const updated = data.files.find((f: StoredFile) => f.id === selectedFile.id);
-          setSelectedFile(updated || null);
-        }
+        setQuota(data.quota ?? { used: 0, total: MAX_STORAGE_BYTES });
+        setSelectedFile((prev) => {
+          if (!prev) return prev;
+          return data.files.find((f: StoredFile) => f.id === prev.id) ?? null;
+        });
       }
-    } catch {
-      // silently fail on initial load
+    } catch (err) {
+      toast({
+        title: "Connection error",
+        description: err instanceof Error ? err.message : "Failed to reach API",
+        variant: "destructive",
+      });
     }
-  }, [selectedFile]);
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchFiles]);
 
   const handleDelete = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
-    if (selectedFile?.id === id) setSelectedFile(null);
+    setSelectedFile((prev) => (prev?.id === id ? null : prev));
     fetchFiles();
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Left: Storage sidebar */}
-      <aside className="w-72 shrink-0 hidden md:flex flex-col">
-        <StorageSidebar
-          files={files}
-          quota={quota}
-          selectedId={selectedFile?.id ?? null}
-          onSelect={setSelectedFile}
-          onRefresh={fetchFiles}
-          onDelete={handleDelete}
-        />
-      </aside>
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <SetupBanner />
+      <SetupStatusCompact />
 
-      {/* Center: Document viewer */}
-      <main className="flex-1 min-w-0 border-r hidden lg:block">
-        <DocumentViewer file={selectedFile} />
-      </main>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <aside className="w-72 shrink-0 hidden md:flex flex-col border-r">
+          <StorageSidebar
+            files={files}
+            quota={quota}
+            selectedId={selectedFile?.id ?? null}
+            onSelect={setSelectedFile}
+            onRefresh={fetchFiles}
+            onDelete={handleDelete}
+          />
+        </aside>
 
-      {/* Right: Chat + Studio Tools */}
-      <section className="w-full md:w-[480px] lg:w-[520px] xl:w-[560px] shrink-0 flex flex-col">
-        <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-          <TabsList className="mx-4 mt-3 grid w-auto grid-cols-2">
-            <TabsTrigger value="chat" className="gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" />
-              Multi-AI Chat
-            </TabsTrigger>
-            <TabsTrigger value="studio" className="gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              Studio Tools
-            </TabsTrigger>
-          </TabsList>
+        <main className="flex-1 min-w-0 border-r hidden lg:block">
+          <DocumentViewer file={selectedFile} />
+        </main>
 
-          <TabsContent value="chat" className="flex-1 mt-0 flex flex-col min-h-0">
-            <ChatPanel
-              selectedFile={selectedFile}
-              model={model}
-              onModelChange={setModel}
-            />
-          </TabsContent>
-          <TabsContent value="studio" className="flex-1 mt-0 flex flex-col min-h-0">
-            <StudioTools file={selectedFile} model={model} />
-          </TabsContent>
-        </Tabs>
-      </section>
+        <section className="w-full md:w-[480px] lg:w-[520px] xl:w-[560px] shrink-0 flex flex-col min-h-0">
+          <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
+            <TabsList className="mx-4 mt-3 grid w-auto grid-cols-2 shrink-0">
+              <TabsTrigger value="chat" className="gap-1.5">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Multi-AI Chat
+              </TabsTrigger>
+              <TabsTrigger value="studio" className="gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Studio Tools
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="chat" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden">
+              <ChatPanel
+                selectedFile={selectedFile}
+                model={model}
+                onModelChange={setModel}
+              />
+            </TabsContent>
+            <TabsContent value="studio" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden">
+              <StudioTools file={selectedFile} model={model} />
+            </TabsContent>
+          </Tabs>
+        </section>
+      </div>
     </div>
   );
 }

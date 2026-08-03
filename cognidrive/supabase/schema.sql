@@ -71,9 +71,12 @@ $$;
 -- Bucket name: cognidrive-files
 -- Public: false
 
--- Row Level Security (optional, enable when auth is added)
+-- Row Level Security
 ALTER TABLE files ENABLE ROW LEVEL SECURITY;
 ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow all for demo" ON files;
 CREATE POLICY "Allow all for demo" ON files FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for demo" ON document_chunks;
 CREATE POLICY "Allow all for demo" ON document_chunks FOR ALL USING (true) WITH CHECK (true);

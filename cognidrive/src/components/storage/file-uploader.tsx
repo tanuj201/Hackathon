@@ -9,6 +9,17 @@ interface FileUploaderProps {
   onUploadComplete: () => void;
 }
 
+async function parseJsonResponse(res: Response) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error(
+      text.slice(0, 200) || `Server error (${res.status}). Check Vercel function logs.`
+    );
+  }
+}
+
 export function FileUploader({ onUploadComplete }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -23,13 +34,18 @@ export function FileUploader({ onUploadComplete }: FileUploaderProps) {
         formData.append("file", file);
 
         const res = await fetch("/api/files", { method: "POST", body: formData });
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
 
-        if (!res.ok) throw new Error(data.error || "Upload failed");
+        if (!res.ok) {
+          throw new Error(String(data.error || "Upload failed"));
+        }
 
+        const warnings = [data.storageWarning, data.embeddingWarning].filter(Boolean);
         toast({
           title: "Upload complete",
-          description: `${file.name} indexed with ${data.chunksStored} chunks`,
+          description: warnings.length
+            ? `${file.name} saved. ${String(warnings[0])}`
+            : `${file.name} indexed with ${data.chunksStored ?? 0} chunks`,
         });
         onUploadComplete();
       } catch (err) {

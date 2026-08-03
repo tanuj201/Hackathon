@@ -20,7 +20,7 @@ function getOpenRouterKey(): string {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key || key.includes("your-openrouter") || key.includes("your_")) {
     throw new Error(
-      "OPENROUTER_API_KEY is not configured. Set it in .env.local and restart the dev server."
+      "OPENROUTER_API_KEY is not configured. Add it in Vercel → Settings → Environment Variables and redeploy."
     );
   }
   return key;
@@ -56,7 +56,7 @@ export async function callOpenRouter({
     const error = await response.text();
     if (response.status === 401) {
       throw new Error(
-        "Invalid OpenRouter API key. Check that OPENROUTER_API_KEY in .env.local is correct, then restart the dev server."
+        "Invalid OpenRouter API key. Check OPENROUTER_API_KEY in Vercel Environment Variables and redeploy."
       );
     }
     throw new Error(`OpenRouter error (${response.status}): ${error.slice(0, 300)}`);

@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
 import { retrieveRelevantChunks } from "@/lib/rag";
-import { createServerClient } from "@/lib/supabase/client";
+import { createServerClient, getConfigStatus } from "@/lib/supabase/client";
 import type { AIModel } from "@/types";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const config = getConfigStatus();
+    if (!config.openrouter) {
+      return NextResponse.json(
+        {
+          error:
+            "OPENROUTER_API_KEY is not configured. Add it in Vercel → Settings → Environment Variables, then redeploy. Get a key at https://openrouter.ai/keys",
+        },
+        { status: 503 }
+      );
+    }
+
     const { message, fileId, model, history } = await request.json();
 
     if (!message) {
@@ -14,8 +28,12 @@ export async function POST(request: NextRequest) {
 
     let context = "";
     if (fileId) {
-      const chunks = await retrieveRelevantChunks(fileId, message);
-      context = chunks.join("\n\n---\n\n");
+      try {
+        const chunks = await retrieveRelevantChunks(fileId, message);
+        context = chunks.join("\n\n---\n\n");
+      } catch {
+        // RAG optional — fall back to full document text
+      }
 
       if (!context) {
         const supabase = createServerClient();
@@ -24,7 +42,7 @@ export async function POST(request: NextRequest) {
           .select("content_text")
           .eq("id", fileId)
           .single();
-        context = file?.content_text?.slice(0, 8000) ?? "";
+        context = file?.content_text?.slice(0, 12000) ?? "";
       }
     }
 
