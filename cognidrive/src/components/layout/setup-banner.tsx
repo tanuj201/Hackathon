@@ -11,6 +11,7 @@ interface StatusResponse {
   databaseError?: string;
   storageBucket?: boolean;
   storageError?: string;
+  tts?: boolean;
   ready?: boolean;
   siteUrl?: string;
 }
@@ -107,6 +108,7 @@ export function SetupStatusCompact() {
       <StatusDot ok={status.database} label="Database" />
       <StatusDot ok={status.openrouter} label="OpenRouter" />
       <StatusDot ok={status.storageBucket} label="Storage" />
+      <StatusDot ok={status.tts} label="TTS MP3" />
     </div>
   );
 }

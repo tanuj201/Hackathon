@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createServerClient, getConfigStatus, STORAGE_BUCKET } from "@/lib/supabase/client";
+import { hasTtsConfigured } from "@/lib/tts";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const status = getConfigStatus();
-  const checks: Record<string, boolean | string> = { ...status };
+  const checks: Record<string, boolean | string> = {
+    ...status,
+    tts: hasTtsConfigured(),
+  };
 
   if (status.supabase) {
     try {

@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table2, Loader2, Download, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { downloadBlob, exportToCSV } from "@/lib/utils";
@@ -66,20 +65,20 @@ export function DataTableExtractor({ file, model }: DataTableExtractorProps) {
 
   if (!file) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="flex h-full items-center justify-center text-muted-foreground p-4">
         <p className="text-sm">Select a document to extract structured data</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col p-4 gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Table2 className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Data Table Extractor</h3>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Table2 className="h-5 w-5 text-primary shrink-0" />
+          <h3 className="font-semibold truncate">Data Table Extractor</h3>
         </div>
-        <Button onClick={generate} disabled={isGenerating}>
+        <Button onClick={generate} disabled={isGenerating} className="shrink-0">
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -91,10 +90,10 @@ export function DataTableExtractor({ file, model }: DataTableExtractorProps) {
         </Button>
       </div>
 
-      {table && (
-        <>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
+      {table ? (
+        <div className="flex flex-1 min-h-0 flex-col gap-3 px-4 pb-4 overflow-hidden">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={filter}
@@ -103,55 +102,60 @@ export function DataTableExtractor({ file, model }: DataTableExtractorProps) {
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} className="shrink-0">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 rounded-lg border">
-            <div className="min-w-full">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
+          <div className="flex-1 min-h-0 overflow-auto rounded-lg border bg-background">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-muted">
+                <tr className="border-b">
+                  {table.columns.map((col) => (
+                    <th
+                      key={col}
+                      className="px-4 py-3 text-left font-medium text-muted-foreground whitespace-nowrap"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.map((row, i) => (
+                  <tr key={i} className="border-b hover:bg-muted/30 transition-colors">
                     {table.columns.map((col) => (
-                      <th
-                        key={col}
-                        className="px-4 py-3 text-left font-medium text-muted-foreground"
-                      >
-                        {col}
-                      </th>
+                      <td key={col} className="px-4 py-2.5 whitespace-nowrap max-w-[240px] truncate">
+                        {row[col] ?? "—"}
+                      </td>
                     ))}
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map((row, i) => (
-                    <tr key={i} className="border-b hover:bg-muted/30 transition-colors">
-                      {table.columns.map((col) => (
-                        <td key={col} className="px-4 py-2.5">
-                          {row[col] ?? "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  {filteredRows.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={table.columns.length}
-                        className="px-4 py-8 text-center text-muted-foreground"
-                      >
-                        No matching rows
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </ScrollArea>
-          <p className="text-xs text-muted-foreground">
+                ))}
+                {filteredRows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={table.columns.length}
+                      className="px-4 py-8 text-center text-muted-foreground"
+                    >
+                      No matching rows
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-xs text-muted-foreground shrink-0">
             Showing {filteredRows.length} of {table.rows.length} rows
           </p>
-        </>
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-center text-muted-foreground px-4">
+          <p className="text-sm text-center">
+            Click &quot;Extract Data Table&quot; to pull structured rows from this document
+          </p>
+        </div>
       )}
     </div>
   );

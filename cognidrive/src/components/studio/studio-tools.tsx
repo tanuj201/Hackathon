@@ -14,8 +14,8 @@ interface StudioToolsProps {
 
 export function StudioTools({ file, model }: StudioToolsProps) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="border-b px-4 py-3 shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <div>
@@ -28,8 +28,8 @@ export function StudioTools({ file, model }: StudioToolsProps) {
         </div>
       </div>
 
-      <Tabs defaultValue="audio" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3">
+      <Tabs defaultValue="audio" className="flex flex-1 min-h-0 flex-col overflow-hidden">
+        <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3 shrink-0">
           <TabsTrigger value="audio" className="gap-1.5">
             <Headphones className="h-3.5 w-3.5" />
             Audio
@@ -44,13 +44,22 @@ export function StudioTools({ file, model }: StudioToolsProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="audio" className="flex-1 mt-0 overflow-hidden">
+        <TabsContent
+          value="audio"
+          className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=inactive]:hidden"
+        >
           <AudioOverview file={file} model={model} />
         </TabsContent>
-        <TabsContent value="mindmap" className="flex-1 mt-0 overflow-hidden">
+        <TabsContent
+          value="mindmap"
+          className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=inactive]:hidden"
+        >
           <MindMapView file={file} model={model} />
         </TabsContent>
-        <TabsContent value="table" className="flex-1 mt-0 overflow-hidden">
+        <TabsContent
+          value="table"
+          className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=inactive]:hidden"
+        >
           <DataTableExtractor file={file} model={model} />
         </TabsContent>
       </Tabs>

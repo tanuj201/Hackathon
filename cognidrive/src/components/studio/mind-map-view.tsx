@@ -155,8 +155,8 @@ export function MindMapView({ file, model }: MindMapViewProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center gap-2">
           <Network className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Interactive Mind Map</h3>
@@ -173,7 +173,7 @@ export function MindMapView({ file, model }: MindMapViewProps) {
         </Button>
       </div>
 
-      <div className="flex-1 bg-muted/20">
+      <div className="flex-1 min-h-0 overflow-hidden bg-muted/20">
         {mindMap ? (
           <ReactFlow
             nodes={nodes}
