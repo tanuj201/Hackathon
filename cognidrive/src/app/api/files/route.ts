@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, STORAGE_BUCKET, getConfigStatus } from "@/lib/supabase/client";
 import { parseDocument } from "@/lib/document-parser";
 import { embedAndStoreChunks } from "@/lib/rag";
-import { MAX_STORAGE_BYTES } from "@/types";
+import { getMaxStorageBytes, getStorageQuotaFromUsed } from "@/lib/storage-config";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET() {
           error:
             "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then redeploy.",
           files: [],
-          quota: { used: 0, total: MAX_STORAGE_BYTES },
+          quota: { used: 0, total: getMaxStorageBytes() },
         },
         { status: 503 }
       );
@@ -33,7 +33,7 @@ export async function GET() {
         ? " Run supabase/schema.sql in your Supabase SQL Editor."
         : "";
       return NextResponse.json(
-        { error: `${error.message}${hint}`, files: [], quota: { used: 0, total: MAX_STORAGE_BYTES } },
+        { error: `${error.message}${hint}`, files: [], quota: { used: 0, total: getMaxStorageBytes() } },
         { status: 500 }
       );
     }
@@ -42,12 +42,12 @@ export async function GET() {
 
     return NextResponse.json({
       files: data ?? [],
-      quota: { used, total: MAX_STORAGE_BYTES },
+      quota: getStorageQuotaFromUsed(used),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to load files";
     return NextResponse.json(
-      { error: message, files: [], quota: { used: 0, total: MAX_STORAGE_BYTES } },
+      { error: message, files: [], quota: { used: 0, total: getMaxStorageBytes() } },
       { status: 500 }
     );
   }
@@ -111,7 +111,8 @@ export async function POST(request: NextRequest) {
     const usedBytes =
       existingFiles?.reduce((sum, f) => sum + Number(f.size), 0) ?? 0;
 
-    if (usedBytes + file.size > MAX_STORAGE_BYTES) {
+    const maxBytes = getMaxStorageBytes();
+    if (usedBytes + file.size > maxBytes) {
       return NextResponse.json(
         { error: "Storage quota exceeded" },
         { status: 413 }

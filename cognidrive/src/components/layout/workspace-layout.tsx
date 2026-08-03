@@ -10,11 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { AIModel, StoredFile, StorageQuota } from "@/types";
-import { MAX_STORAGE_BYTES } from "@/types";
+import { DEFAULT_STORAGE_BYTES } from "@/types";
 
 export function WorkspaceLayout() {
   const [files, setFiles] = useState<StoredFile[]>([]);
-  const [quota, setQuota] = useState<StorageQuota>({ used: 0, total: MAX_STORAGE_BYTES });
+  const [quota, setQuota] = useState<StorageQuota>({ used: 0, total: DEFAULT_STORAGE_BYTES });
   const [selectedFile, setSelectedFile] = useState<StoredFile | null>(null);
   const [model, setModel] = useState<AIModel>("openai/gpt-4o");
 
@@ -33,7 +33,7 @@ export function WorkspaceLayout() {
 
       if (data.files) {
         setFiles(data.files);
-        setQuota(data.quota ?? { used: 0, total: MAX_STORAGE_BYTES });
+        setQuota(data.quota ?? { used: 0, total: DEFAULT_STORAGE_BYTES });
         setSelectedFile((prev) => {
           if (!prev) return prev;
           return data.files.find((f: StoredFile) => f.id === prev.id) ?? null;
@@ -76,7 +76,7 @@ export function WorkspaceLayout() {
         </aside>
 
         <main className="flex-1 min-w-0 border-r hidden lg:block">
-          <DocumentViewer file={selectedFile} />
+          <DocumentViewer file={selectedFile} onDelete={handleDelete} />
         </main>
 
         <section className="w-full md:w-[480px] lg:w-[520px] xl:w-[560px] shrink-0 flex flex-col min-h-0">

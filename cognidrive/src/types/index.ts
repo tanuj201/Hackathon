@@ -72,7 +72,10 @@ export interface AudioTranscriptLine {
 export interface StorageQuota {
   used: number;
   total: number;
+  percent?: number;
+  remaining?: number;
 }
 
-export const MAX_STORAGE_BYTES = 100 * 1024 * 1024; // 100 MB demo quota
+/** Client fallback before API loads — matches 1 GB default server quota */
+export const DEFAULT_STORAGE_BYTES = 1024 * 1024 * 1024;
 export const CHUNK_WORD_SIZE = 500;
