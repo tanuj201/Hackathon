@@ -5,7 +5,7 @@ Multi-AI Workspace & Document Intelligence App — inspired by Google Drive + No
 ## Features
 
 - **Document Storage** — Upload PDF, TXT, and CSV files with drag-and-drop, quota tracking, and file management
-- **Multi-AI Chat** — Switch between GPT-4o, Claude 3.5 Sonnet, and Gemini 1.5 Pro via OpenRouter
+- **Multi-AI Chat** — Switch between GPT-4o, DeepSeek V3, and Gemini 2.5 Flash via OpenRouter
 - **Document RAG** — 500-word chunking, pgvector embeddings, and semantic retrieval during chat
 - **Studio Tools (NotebookLM-style)**
   - **Audio Overview** — Two-speaker AI podcast with TTS playback and speed control

@@ -3,12 +3,11 @@ import { getSiteUrl } from "@/lib/supabase/client";
 
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 
-/** If the selected Claude slug fails, try these in order */
-export const CLAUDE_MODEL_FALLBACKS = [
-  "anthropic/claude-sonnet-4.6",
-  "anthropic/claude-sonnet-4",
-  "anthropic/claude-3.5-sonnet",
-  "anthropic/claude-3.7-sonnet",
+/** If the selected DeepSeek slug fails, try these in order */
+export const DEEPSEEK_MODEL_FALLBACKS = [
+  "deepseek/deepseek-chat-v3-0324",
+  "deepseek/deepseek-chat",
+  "deepseek/deepseek-r1",
 ] as const;
 
 interface ChatMessage {
@@ -66,12 +65,16 @@ function supportsOpenAiJsonFormat(model: string): boolean {
   return !isAnthropicModel(model);
 }
 
-function getModelsToTry(model: string): string[] {
-  if (!isAnthropicModel(model)) return [model];
+function isDeepSeekModel(model: string): boolean {
+  return model.startsWith("deepseek/");
+}
 
-  const fallbacks = [...CLAUDE_MODEL_FALLBACKS];
-  if (fallbacks.includes(model as typeof CLAUDE_MODEL_FALLBACKS[number])) {
-    const idx = fallbacks.indexOf(model as typeof CLAUDE_MODEL_FALLBACKS[number]);
+function getModelsToTry(model: string): string[] {
+  if (!isDeepSeekModel(model)) return [model];
+
+  const fallbacks = [...DEEPSEEK_MODEL_FALLBACKS];
+  if (fallbacks.includes(model as typeof DEEPSEEK_MODEL_FALLBACKS[number])) {
+    const idx = fallbacks.indexOf(model as typeof DEEPSEEK_MODEL_FALLBACKS[number]);
     return fallbacks.slice(idx);
   }
   return [model, ...fallbacks];
@@ -164,7 +167,7 @@ export async function callOpenRouter({
     }
   }
 
-  throw lastError ?? new Error("All Claude model fallbacks failed on OpenRouter");
+  throw lastError ?? new Error("All model fallbacks failed on OpenRouter");
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {

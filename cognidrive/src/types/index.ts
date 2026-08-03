@@ -1,6 +1,6 @@
 export type AIModel =
   | "openai/gpt-4o"
-  | "anthropic/claude-sonnet-4.6"
+  | "deepseek/deepseek-chat-v3-0324"
   | "google/gemini-2.5-flash";
 
 export interface AIModelOption {
@@ -12,9 +12,9 @@ export interface AIModelOption {
 export const AI_MODELS: AIModelOption[] = [
   { id: "openai/gpt-4o", label: "GPT-4o", provider: "OpenAI" },
   {
-    id: "anthropic/claude-sonnet-4.6",
-    label: "Claude Sonnet 4.6",
-    provider: "Anthropic",
+    id: "deepseek/deepseek-chat-v3-0324",
+    label: "DeepSeek V3",
+    provider: "DeepSeek",
   },
   {
     id: "google/gemini-2.5-flash",
