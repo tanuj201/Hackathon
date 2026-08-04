@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AuthCallbackPage } from "@/components/auth/auth-callback-page";
+import { AuthConfirmPage } from "@/components/auth/auth-confirm-page";
 
 export default function Page() {
   return (
@@ -8,7 +8,7 @@ export default function Page() {
         <div className="min-h-screen flex items-center justify-center">Signing in...</div>
       }
     >
-      <AuthCallbackPage />
+      <AuthConfirmPage />
     </Suspense>
   );
 }

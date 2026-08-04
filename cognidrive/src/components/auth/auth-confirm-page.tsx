@@ -1,29 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function AuthCallbackPage() {
-  const router = useRouter();
+function safeRedirectPath(path: string | null): string {
+  if (!path || path === "/" || !path.startsWith("/")) return "/app";
+  return path;
+}
+
+export function AuthConfirmPage() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/app";
+  const redirect = safeRedirectPath(searchParams.get("redirect"));
 
   useEffect(() => {
     const completeAuth = async () => {
       const supabase = getSupabaseBrowserClient();
-      const code = searchParams.get("code");
       const hash = window.location.hash;
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          router.replace(redirect);
-          router.refresh();
-          return;
-        }
-      }
 
       if (hash.includes("access_token")) {
         const params = new URLSearchParams(hash.replace(/^#/, ""));
@@ -36,13 +30,7 @@ export function AuthCallbackPage() {
             refresh_token,
           });
           if (!error) {
-            window.history.replaceState(
-              null,
-              "",
-              window.location.pathname + window.location.search
-            );
-            router.replace(redirect);
-            router.refresh();
+            window.location.href = redirect;
             return;
           }
         }
@@ -50,16 +38,15 @@ export function AuthCallbackPage() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.replace(redirect);
-        router.refresh();
+        window.location.href = redirect;
         return;
       }
 
-      router.replace("/login?error=auth");
+      window.location.href = "/login?error=auth";
     };
 
     completeAuth();
-  }, [redirect, router, searchParams]);
+  }, [redirect]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

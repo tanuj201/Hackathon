@@ -43,7 +43,14 @@ export function getClientAuthOrigin(): string {
 
 export function buildAuthCallbackUrl(redirectPath: string): string {
   const origin = getClientAuthOrigin().replace(/\/$/, "");
-  return `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`;
+  const path = redirectPath.startsWith("/") ? redirectPath : "/app";
+  return `${origin}/auth/callback?redirect=${encodeURIComponent(path)}`;
+}
+
+export function buildAuthConfirmUrl(redirectPath: string): string {
+  const origin = getClientAuthOrigin().replace(/\/$/, "");
+  const path = redirectPath.startsWith("/") ? redirectPath : "/app";
+  return `${origin}/auth/confirm?redirect=${encodeURIComponent(path)}`;
 }
 
 /** Server-side client — prefers service role key to bypass RLS for uploads. */
