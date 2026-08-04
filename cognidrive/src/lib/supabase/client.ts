@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr";
 
 export const STORAGE_BUCKET = "cognidrive-files";
 
@@ -24,12 +25,25 @@ function getSupabaseAnonKey(): string {
 
 let browserClient: SupabaseClient | null = null;
 
-/** Browser-safe client (uses anon key) — for auth UI */
+/** Browser-safe client — uses @supabase/ssr for cookie-based sessions */
 export function getSupabaseBrowserClient(): SupabaseClient {
   if (!browserClient) {
-    browserClient = createClient(getSupabaseUrl(), getSupabaseAnonKey());
+    browserClient = createSupabaseBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
   }
   return browserClient;
+}
+
+/** Origin used for OAuth redirect — always matches the page the user is on */
+export function getClientAuthOrigin(): string {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return getSiteUrl();
+}
+
+export function buildAuthCallbackUrl(redirectPath: string): string {
+  const origin = getClientAuthOrigin().replace(/\/$/, "");
+  return `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`;
 }
 
 /** Server-side client — prefers service role key to bypass RLS for uploads. */

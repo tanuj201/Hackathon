@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Brain, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseBrowserClient, buildAuthCallbackUrl } from "@/lib/supabase/client";
 
 function LoginForm() {
   const router = useRouter();
@@ -51,7 +51,7 @@ function LoginForm() {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+        redirectTo: buildAuthCallbackUrl(redirect),
       },
     });
     if (oauthError) {
