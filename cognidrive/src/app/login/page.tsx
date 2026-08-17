@@ -12,11 +12,16 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/app";
+  const authError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    authError === "auth"
+      ? "Sign-in could not be completed. Check Supabase redirect URLs in project settings, then try again."
+      : null
+  );
   const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const supabase = getSupabaseBrowserClient();
