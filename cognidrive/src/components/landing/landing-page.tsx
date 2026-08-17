@@ -21,7 +21,7 @@ const features = [
   {
     icon: MessageSquare,
     title: "Multi-AI Chat",
-    description: "Chat with GPT-4o, DeepSeek, and Gemini about your lecture notes and papers.",
+    description: "Chat with Gemini, DeepSeek, Llama 3.3, and GPT-4o about your lecture notes and papers.",
   },
   {
     icon: Headphones,

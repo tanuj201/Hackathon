@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const reply = await callOpenRouter({
-      model: (model as AIModel) || "openai/gpt-4o",
+      model: (model as AIModel) || "google/gemini-2.5-flash",
       messages,
       temperature: 0.7,
       maxTokens: 2048,

@@ -16,6 +16,11 @@ export const OPENAI_MODEL_FALLBACKS = [
   "openai/gpt-4o-2024-11-20",
 ] as const;
 
+export const LLAMA_MODEL_FALLBACKS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct",
+] as const;
+
 /** Reliable models for JSON studio tools (mind map, table, audio script) */
 export const STUDIO_MODEL_FALLBACKS = [
   "google/gemini-2.5-flash",
@@ -56,6 +61,10 @@ function isOpenAIModel(model: string): boolean {
 
 function isDeepSeekModel(model: string): boolean {
   return model.startsWith("deepseek/");
+}
+
+function isMetaLlamaModel(model: string): boolean {
+  return model.startsWith("meta-llama/");
 }
 
 function isGoogleModel(model: string): boolean {
@@ -117,6 +126,9 @@ function getModelsToTry(model: string, jsonMode: boolean): string[] {
   }
   if (isOpenAIModel(model)) {
     return sliceFromFallbacks(model, OPENAI_MODEL_FALLBACKS);
+  }
+  if (isMetaLlamaModel(model)) {
+    return sliceFromFallbacks(model, LLAMA_MODEL_FALLBACKS);
   }
   return [model];
 }

@@ -1,7 +1,8 @@
 export type AIModel =
   | "openai/gpt-4o"
   | "deepseek/deepseek-chat-v3-0324"
-  | "google/gemini-2.5-flash";
+  | "google/gemini-2.5-flash"
+  | "meta-llama/llama-3.3-70b-instruct:free";
 
 export interface AIModelOption {
   id: AIModel;
@@ -20,6 +21,11 @@ export const AI_MODELS: AIModelOption[] = [
     id: "google/gemini-2.5-flash",
     label: "Gemini 2.5 Flash",
     provider: "Google",
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    label: "Llama 3.3 70B",
+    provider: "Meta",
   },
 ];
 
