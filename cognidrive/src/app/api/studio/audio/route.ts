@@ -9,6 +9,8 @@ import { getConfigStatus } from "@/lib/supabase/client";
 import { getStudioFileAccess, recordStudioUsage } from "@/lib/studio-access";
 import type { AIModel } from "@/types";
 
+const DEFAULT_STUDIO_MODEL: AIModel = "google/gemini-2.5-flash";
+
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     const docText = file.content_text.slice(0, 10000);
 
     const scriptRaw = await callOpenRouter({
-      model: (model as AIModel) || "openai/gpt-4o",
+      model: (model as AIModel) || DEFAULT_STUDIO_MODEL,
       messages: [
         {
           role: "system",

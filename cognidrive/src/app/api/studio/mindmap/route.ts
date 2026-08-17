@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callOpenRouter } from "@/lib/openrouter";
+import { callOpenRouter, parseJsonFromModelResponse } from "@/lib/openrouter";
 import { getStudioFileAccess, recordStudioUsage } from "@/lib/studio-access";
 import type { AIModel, MindMapNode } from "@/types";
+
+const DEFAULT_STUDIO_MODEL: AIModel = "google/gemini-2.5-flash";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
     const docText = file.content_text.slice(0, 12000);
 
     const raw = await callOpenRouter({
-      model: (model as AIModel) || "openai/gpt-4o",
+      model: (model as AIModel) || DEFAULT_STUDIO_MODEL,
       messages: [
         {
           role: "system",
@@ -63,7 +65,7 @@ Rules:
 
     let mindMap: MindMapNode;
     try {
-      mindMap = JSON.parse(raw);
+      mindMap = parseJsonFromModelResponse<MindMapNode>(raw);
     } catch {
       return NextResponse.json({ error: "Failed to parse mind map JSON" }, { status: 500 });
     }

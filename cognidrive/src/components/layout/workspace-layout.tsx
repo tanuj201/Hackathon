@@ -29,7 +29,7 @@ export function WorkspaceLayout() {
   const [quota, setQuota] = useState<StorageQuota>({ used: 0, total: DEFAULT_STORAGE_BYTES });
   const [usage, setUsage] = useState(defaultUsage);
   const [selectedFile, setSelectedFile] = useState<StoredFile | null>(null);
-  const [model, setModel] = useState<AIModel>("openai/gpt-4o");
+  const [model, setModel] = useState<AIModel>("google/gemini-2.5-flash");
 
   const fetchFiles = useCallback(async () => {
     try {
